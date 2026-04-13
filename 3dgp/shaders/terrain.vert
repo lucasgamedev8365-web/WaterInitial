@@ -9,6 +9,8 @@ uniform mat4 matrixModelView;
 uniform vec3 materialAmbient;
 uniform vec3 materialDiffuse;
 
+uniform float waterLevel; // water level (in absolute units) 
+
 in vec3 aVertex;
 in vec3 aNormal;
 in vec2 aTexCoord;

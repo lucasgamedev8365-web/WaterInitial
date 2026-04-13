@@ -1,5 +1,8 @@
 #version 330
 
+uniform vec3 waterColor;
+uniform vec3 skyColor;
+
 // Input Variables (received from Vertex Shader)
 in vec4 color;
 in vec4 position;

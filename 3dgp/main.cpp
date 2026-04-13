@@ -115,6 +115,12 @@ bool init()
 	programBasic.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
 	programTerrain.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
 
+	// setup the water colours and level
+	programWater.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
+	programWater.sendUniform("skyColor", vec3(0.2f, 0.6f, 1.f));
+	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
+	programTerrain.sendUniform("waterLevel", waterLevel);
+
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1), radians(12.f), vec3(1, 0, 0));
 	matrixView *= lookAt(
