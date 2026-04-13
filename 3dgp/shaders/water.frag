@@ -1,5 +1,8 @@
 #version 330
 
+uniform vec3 waterColor;
+uniform vec3 skyColor; 
+
 // Input Variables (received from Vertex Shader)
 in vec4 color;
 in vec4 position;
@@ -8,9 +11,6 @@ in vec2 texCoord0;
 
 // Output Variable (sent down through the Pipeline)
 out vec4 outColor;
-
-uniform vec3 waterColor;
-uniform vec3 skyColor; 
 
 void main(void) 
 {

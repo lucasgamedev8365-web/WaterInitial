@@ -1,4 +1,4 @@
-#version 330
+#version 330 
 
 // Input Variables (received from Vertex Shader)
 in vec4 color;

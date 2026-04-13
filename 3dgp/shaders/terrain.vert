@@ -19,6 +19,7 @@ out vec4 color;
 out vec4 position;
 out vec3 normal;
 out vec2 texCoord0;
+out float waterDepth;
 
 // Light declarations
 struct AMBIENT
@@ -62,6 +63,9 @@ void main(void)
 
 	// calculate texture coordinate
 	texCoord0 = aTexCoord;
+
+	// calculate depth of water
+	waterDepth = waterLevel - aVertex.y;	
 
 	// calculate light
 	color = vec4(0, 0, 0, 1);
