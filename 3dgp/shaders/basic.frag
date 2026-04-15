@@ -1,5 +1,7 @@
 #version 330 
 
+uniform sampler2D texture0;
+
 // Input Variables (received from Vertex Shader)
 in vec4 color;
 in vec4 position;
@@ -12,4 +14,5 @@ out vec4 outColor;
 void main(void) 
 {
 	outColor = color;
+	outColor *= texture(texture0, texCoord0);
 }

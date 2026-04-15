@@ -21,6 +21,8 @@ C3dglProgram programBasic;
 C3dglProgram programWater;
 C3dglProgram programTerrain;
 
+GLuint idTexGrass, idTexSand, idTexNone;
+
 // Water specific variables
 float waterLevel = 4.6f;
 
@@ -99,6 +101,49 @@ bool init()
 	if (!terrain.load("models\\heightmap.png", 10)) return false;
 	if (!water.load("models\\watermap.png", 10, &programWater)) return false;
 
+	
+
+	C3dglBitmap bm;
+
+	bm.load("models/grass.png", GL_RGBA);
+	if (!bm.getBits()) return false;
+
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &idTexGrass);
+	glBindTexture(GL_TEXTURE_2D, idTexGrass);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits());
+
+	programTerrain.sendUniform("textureShore", 0);
+
+	
+
+	bm.load("models/sand.png", GL_RGBA);
+	if (!bm.getBits()) return false;
+
+	glActiveTexture(GL_TEXTURE1);
+	glGenTextures(1, &idTexSand);
+	glBindTexture(GL_TEXTURE_2D, idTexSand);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits());
+
+	programTerrain.sendUniform("textureShore", 1);
+
+	glActiveTexture(GL_TEXTURE2);
+
+	programBasic.use();
+	glGenTextures(1, &idTexNone);
+
+	glBindTexture(GL_TEXTURE_2D, idTexNone);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	BYTE bytes[] = { 255, 255, 255 };
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
+
+	programBasic.sendUniform("texture0", 0);
+
 	// setup lights (for basic and terrain programs only, water does not use these lights):
 	programBasic.sendUniform("lightAmbient.color", vec3(0.1, 0.1, 0.1));
 	programBasic.sendUniform("lightDir.direction", vec3(1.0, 0.5, 1.0));
@@ -114,6 +159,12 @@ bool init()
 	programWater.sendUniform("materialAmbient", vec3(1.0, 1.0, 1.0));
 	programBasic.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
 	programTerrain.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
+
+	// setup the water colours and level
+	programWater.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
+	programWater.sendUniform("skyColor", vec3(0.2f, 0.6f, 1.f));
+	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
+	programTerrain.sendUniform("waterLevel", waterLevel);
 
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1), radians(12.f), vec3(1, 0, 0));
@@ -141,6 +192,11 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	// Render Terrain
 	programTerrain.use();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, idTexGrass);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, idTexSand);
 
 	// Setup the Diffuse Material to: Green Grass
 	programTerrain.sendUniform("materialDiffuse", vec3(0.2f, 0.8f, 0.2f));
