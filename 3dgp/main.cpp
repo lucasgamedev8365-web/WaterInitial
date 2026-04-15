@@ -129,6 +129,17 @@ bool init()
 	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 	programTerrain.sendUniform("waterLevel", waterLevel);
 
+	// none (simple-white) texture
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &idTexNone);
+	glBindTexture(GL_TEXTURE_2D, idTexNone);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	BYTE bytes[] = { 255, 255, 255 };
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
+
+	// Render Terrain
+	programTerrain.use();
+
 	// setup the textures
 	bm.load("models\\sand.png", GL_RGBA);
 
@@ -138,6 +149,7 @@ bool init()
 		GL_UNSIGNED_BYTE, bm.getBits());
 	glGenTextures(1, &idTexSand);
 	glBindTexture(GL_TEXTURE_2D, idTexSand);
+	programTerrain.sendUniform("textureBed", 1);
 
 	bm.load("models\\grass.png", GL_RGBA);
 
@@ -146,15 +158,8 @@ bool init()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA,
 		GL_UNSIGNED_BYTE, bm.getBits());
 	glGenTextures(1, &idTexSand);
-	
 	glBindTexture(GL_TEXTURE_2D, idTexGrass);
-	
-	// none (simple-white) texture
-	glGenTextures(1, &idTexNone);
-	glBindTexture(GL_TEXTURE_2D, idTexNone);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	BYTE bytes[] = { 255, 255, 255 };
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
+	programTerrain.sendUniform("textureShore", 2);
 
 	// Send the texture info to the shaders
 	programBasic.sendUniform("texture0", 0);
@@ -190,14 +195,6 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	// Setup the Diffuse Material to: Green Grass
 	programTerrain.sendUniform("materialDiffuse", vec3(0.2f, 0.8f, 0.2f));
-	
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, idTexGrass);
-	programTerrain.sendUniform("textureBed", 1);
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, idTexSand);
-	programTerrain.sendUniform("textureShore", 2);
 
 	// render the terrain
 	m = matrixView;
