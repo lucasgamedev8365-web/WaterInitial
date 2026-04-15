@@ -21,14 +21,8 @@ C3dglProgram programBasic;
 C3dglProgram programWater;
 C3dglProgram programTerrain;
 
-//bitmaps
-C3dglBitmap bm;
-
-//texture buffers
-GLuint idTexSand, idTexGrass, idTexNone;
-
 // Water specific variables
-float waterLevel = 4.0f;
+float waterLevel = 4.6f;
 
 // The View Matrix
 mat4 matrixView;
@@ -52,11 +46,11 @@ bool init()
 	C3dglShader fragmentShader;
 
 	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
-	if (!vertexShader.loadFromFile("shaders\\basic.vert")) return false;
+	if (!vertexShader.loadFromFile("shaders/basic.vert")) return false;
 	if (!vertexShader.compile()) return false;
 
 	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
-	if (!fragmentShader.loadFromFile("shaders\\basic.frag")) return false;
+	if (!fragmentShader.loadFromFile("shaders/basic.frag")) return false;
 	if (!fragmentShader.compile()) return false;
 
 	if (!programBasic.create()) return false;
@@ -66,11 +60,11 @@ bool init()
 	if (!programBasic.use(true)) return false;
 
 	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
-	if (!vertexShader.loadFromFile("shaders\\water.vert")) return false;
+	if (!vertexShader.loadFromFile("shaders/water.vert")) return false;
 	if (!vertexShader.compile()) return false;
 
 	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
-	if (!fragmentShader.loadFromFile("shaders\\water.frag")) return false;
+	if (!fragmentShader.loadFromFile("shaders/water.frag")) return false;
 	if (!fragmentShader.compile()) return false;
 
 	if (!programWater.create()) return false;
@@ -81,11 +75,11 @@ bool init()
 
 
 	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
-	if (!vertexShader.loadFromFile("shaders\\terrain.vert")) return false;
+	if (!vertexShader.loadFromFile("shaders/terrain.vert")) return false;
 	if (!vertexShader.compile()) return false;
 
 	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
-	if (!fragmentShader.loadFromFile("shaders\\terrain.frag")) return false;
+	if (!fragmentShader.loadFromFile("shaders/terrain.frag")) return false;
 	if (!fragmentShader.compile()) return false;
 
 	if (!programTerrain.create()) return false;
@@ -99,8 +93,6 @@ bool init()
 	glutSetVertexAttribNormal(programBasic.getAttribLocation("aNormal"));
 	glutSetVertexAttribCoord3(programTerrain.getAttribLocation("aVertex"));
 	glutSetVertexAttribNormal(programTerrain.getAttribLocation("aNormal"));
-	glutSetVertexAttribCoord3(programWater.getAttribLocation("aVertex"));
-	glutSetVertexAttribNormal(programWater.getAttribLocation("aNormal"));
 
 	// load your 3D models here!
 	programTerrain.use();
@@ -122,49 +114,6 @@ bool init()
 	programWater.sendUniform("materialAmbient", vec3(1.0, 1.0, 1.0));
 	programBasic.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
 	programTerrain.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
-
-	// setup the water colours and level
-	programWater.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
-	programWater.sendUniform("skyColor", vec3(0.2f, 0.6f, 1.f));
-	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
-	programTerrain.sendUniform("waterLevel", waterLevel);
-
-	// none (simple-white) texture
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &idTexNone);
-	glBindTexture(GL_TEXTURE_2D, idTexNone);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	BYTE bytes[] = { 255, 255, 255 };
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
-
-	// Render Terrain
-	programTerrain.use();
-
-	// setup the textures
-	bm.load("models\\sand.png", GL_RGBA);
-
-	glActiveTexture(GL_TEXTURE1);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA,
-		GL_UNSIGNED_BYTE, bm.getBits());
-	glGenTextures(1, &idTexSand);
-	glBindTexture(GL_TEXTURE_2D, idTexSand);
-	programTerrain.sendUniform("textureBed", 1);
-
-	bm.load("models\\grass.png", GL_RGBA);
-
-	glActiveTexture(GL_TEXTURE2);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA,
-		GL_UNSIGNED_BYTE, bm.getBits());
-	glGenTextures(1, &idTexSand);
-	glBindTexture(GL_TEXTURE_2D, idTexGrass);
-	programTerrain.sendUniform("textureShore", 2);
-
-	// Send the texture info to the shaders
-	programBasic.sendUniform("texture0", 0);
-	programWater.sendUniform("texture0", 0);
-	programTerrain.sendUniform("texture0", 0);
 
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1), radians(12.f), vec3(1, 0, 0));
@@ -216,8 +165,6 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 void onRender()
 {
-
-
 	// these variables control time & animation
 	static float prev = 0;
 	float time = glutGet(GLUT_ELAPSED_TIME) * 0.001f;	// time since start in seconds
@@ -359,8 +306,8 @@ void onMotion(int x, int y)
 	float newPitch = glm::clamp(pitch + deltaPitch, -maxPitch, maxPitch);
 	matrixView = rotate(rotate(rotate(mat4(1.f),
 		newPitch, vec3(1.f, 0.f, 0.f)),
-		deltaYaw, vec3(0.f, 1.f, 0.f)), 
-		-pitch, vec3(1.f, 0.f, 0.f)) 
+		deltaYaw, vec3(0.f, 1.f, 0.f)),
+		-pitch, vec3(1.f, 0.f, 0.f))
 		* matrixView;
 }
 
@@ -370,7 +317,7 @@ void onMouseWheel(int button, int dir, int x, int y)
 	onReshape(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 	// init GLUT and create Window
 	glutInit(&argc, argv);
@@ -399,8 +346,8 @@ int main(int argc, char **argv)
 	glutMotionFunc(onMotion);
 	glutMouseWheelFunc(onMouseWheel);
 
-	C3dglLogger::log("Vendor: {}", (const char *)glGetString(GL_VENDOR));
-	C3dglLogger::log("Renderer: {}", (const char *)glGetString(GL_RENDERER));
+	C3dglLogger::log("Vendor: {}", (const char*)glGetString(GL_VENDOR));
+	C3dglLogger::log("Renderer: {}", (const char*)glGetString(GL_RENDERER));
 	C3dglLogger::log("Version: {}", (const char*)glGetString(GL_VERSION));
 	C3dglLogger::log("");
 
