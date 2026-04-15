@@ -127,7 +127,7 @@ bool init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits());
 
-	programTerrain.sendUniform("textureShore", 1);
+	programTerrain.sendUniform("textureBed", 1);
 
 	glActiveTexture(GL_TEXTURE2);
 
@@ -166,6 +166,9 @@ bool init()
 	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 	programTerrain.sendUniform("waterLevel", waterLevel);
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1), radians(12.f), vec3(1, 0, 0));
 	matrixView *= lookAt(
@@ -193,13 +196,16 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	// Render Terrain
 	programTerrain.use();
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, idTexGrass);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, idTexSand);
-
 	// Setup the Diffuse Material to: Green Grass
 	programTerrain.sendUniform("materialDiffuse", vec3(0.2f, 0.8f, 0.2f));
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, idTexGrass);
+
+	programTerrain.sendUniform("materialDiffuse", vec3(1.0f, 1.0f, 1.0f));
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, idTexSand);
 
 	// render the terrain
 	m = matrixView;

@@ -14,11 +14,10 @@ in float waterDepth;
 // Output Variable (sent down through the Pipeline)
 out vec4 outColor;
 
-void main(void) 
+void main(void)
 {
+	outColor = color;
 	//shoreline multitexturing
 	float isAboveWater = clamp(-waterDepth, 0, 1);
 	outColor *= mix(texture(textureBed, texCoord0), texture(textureShore, texCoord0), isAboveWater);
-
-	outColor = color;
 }
