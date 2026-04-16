@@ -104,15 +104,14 @@ bool init()
 	
 
 	C3dglBitmap bm;
-
 	bm.load("models/grass.png", GL_RGBA);
 	if (!bm.getBits()) return false;
 
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0); //set current active texture unit
 	glGenTextures(1, &idTexGrass);
-	glBindTexture(GL_TEXTURE_2D, idTexGrass);
+	glBindTexture(GL_TEXTURE_2D, idTexGrass);//bind texture to current active texture unit
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
 
 	programTerrain.sendUniform("textureShore", 0);
 
@@ -121,25 +120,22 @@ bool init()
 	bm.load("models/sand.png", GL_RGBA);
 	if (!bm.getBits()) return false;
 
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE1); //set current active texture unit
 	glGenTextures(1, &idTexSand);
-	glBindTexture(GL_TEXTURE_2D, idTexSand);
+	glBindTexture(GL_TEXTURE_2D, idTexSand);//bind texture to current active texture unit
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
 
 	programTerrain.sendUniform("textureBed", 1);
 
+	//
 	glActiveTexture(GL_TEXTURE2);
 
 	programBasic.use();
 	glGenTextures(1, &idTexNone);
-
-	glBindTexture(GL_TEXTURE_2D, idTexNone);
-
+	glBindTexture(GL_TEXTURE_2D, idTexNone); //bind texture to current active texture unit
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
 	BYTE bytes[] = { 255, 255, 255 };
-
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
 
 	programBasic.sendUniform("texture0", 0);
@@ -166,6 +162,7 @@ bool init()
 	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 	programTerrain.sendUniform("waterLevel", waterLevel);
 
+	//allows texture colours (e.g. water) to be blended
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -196,16 +193,11 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	// Render Terrain
 	programTerrain.use();
 
-	// Setup the Diffuse Material to: Green Grass
-	programTerrain.sendUniform("materialDiffuse", vec3(0.2f, 0.8f, 0.2f));
+	//send player position for underwater fog calculations
+	programTerrain.sendUniform("playerPos", getPos(matrixView));
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, idTexGrass);
-
+	// Setup the Diffuse Material to: White (aka textures remain untouched)
 	programTerrain.sendUniform("materialDiffuse", vec3(1.0f, 1.0f, 1.0f));
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, idTexSand);
 
 	// render the terrain
 	m = matrixView;
