@@ -71,11 +71,13 @@ void main(void)
 
 	 // calculate the observer's altitude above the observed vertex
 	float eyeAlt = dot(-position.xyz, mat3(matrixModelView) * vec3(0, 1, 0));
-	float fogDensity = 0.2;
-	vec3 D = playerPos - position.xyz;
-	float distance = sqrt(D.x * D.x + D.y * D.y + D.z * D.z);
+	float fogDensity = - 0.2;
 
-	fogFactor = exp2(-fogDensity * distance * max(waterDepth, 0)/eyeAlt);
+	//Alternate distance calculation
+	//vec3 D = playerPos - position.xyz;
+	//float distance = sqrt(D.x * D.x + D.y * D.y + D.z * D.z);
+
+	fogFactor = exp2(fogDensity * length(position) * max(waterDepth, 0)/eyeAlt); // white textures underwater bug caused by waterDepth and eyeAlt
 
 	// calculate light
 	color = vec4(0, 0, 0, 1);

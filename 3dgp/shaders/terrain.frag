@@ -19,11 +19,8 @@ out vec4 outColor;
 void main(void)
 {
 	outColor = color;
-	outColor = mix(vec4(waterColor, 1), color, fogFactor);
-	
 	//shoreline multitexturing
 	float isAboveWater = clamp(-waterDepth, 0, 1);
 	outColor *= mix(texture(textureBed, texCoord0), texture(textureShore, texCoord0), isAboveWater);
-
-	
+	outColor = mix(vec4(waterColor, 1), outColor, fogFactor);
 }
