@@ -206,6 +206,8 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	// Render Water
 	programWater.use();
 
+	programWater.sendUniform("t", time);
+
 	// Setup the Diffuse Material to: Watery Green
 	programWater.sendUniform("materialAmbient", vec3(0.2f, 0.22f, 0.02f));
 

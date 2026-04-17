@@ -7,6 +7,7 @@ uniform mat4 matrixModelView;
 
 // Uniforms: Material Colours
 uniform vec3 materialAmbient;
+uniform float t;
 
 in vec3 aVertex;
 in vec3 aNormal;
@@ -32,14 +33,33 @@ vec4 AmbientLight(AMBIENT light)
 	return vec4(materialAmbient * light.color, 1);
 }
 
+float Wave(float A, float x, float y, float t)
+{
+	t *= 2;
+	return A * (
+	sin(2.0 * (x * 0.2 + y * 0.7) + t * 1.0) +
+	sin(2.0 * (x * 0.7 + y * 0.2) + t * 0.8) +
+	pow(sin(2.0 * (x * 0.6 + y * 0.5) + t * 1.2), 2) +
+	pow(sin(2.0 * (x * 0.8 + y * 0.2) + t * 1.1), 2));
+} 
+
 void main(void) 
 {
+	// Calculate the wave
+	float a = 0.05;
+	float y = Wave(a, aVertex.x, aVertex.z, t);
+	float d = 0.05;
+	float dx = (Wave(a, aVertex.x+d, aVertex.z, t) - Wave(a, aVertex.x-d, aVertex.z, t)) / 2 / d;
+	float dz = (Wave(a, aVertex.x, aVertex.z+d, t) - Wave(a, aVertex.x, aVertex.z-d, t)) / 2 / d;
+	vec3 newVertex = vec3(aVertex.x, y, aVertex.z);
+	vec3 newNormal = normalize(vec3(-dx, 1, -dz));
+
 	// calculate position
-	position = matrixModelView * vec4(aVertex, 1.0);
+	position = matrixModelView * vec4(newVertex, 1.0);
 	gl_Position = matrixProjection * position;
 
 	// calculate normal
-	normal = normalize(mat3(matrixModelView) * aNormal);
+	normal = normalize(mat3(matrixModelView) * newNormal);
 
 	// calculate texture coordinate
 	texCoord0 = aTexCoord;
