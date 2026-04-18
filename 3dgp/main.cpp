@@ -17,6 +17,8 @@ using namespace glm;
 // 3D Models
 C3dglTerrain terrain, water;
 
+C3dglModel fish;
+
 C3dglProgram programBasic;
 C3dglProgram programWater;
 C3dglProgram programTerrain;
@@ -100,6 +102,8 @@ bool init()
 	programTerrain.use();
 	if (!terrain.load("models\\heightmap.png", 10)) return false;
 	if (!water.load("models\\watermap.png", 10, &programWater)) return false;
+	programBasic.use();
+	if (!fish.load("models\\fish1.blend")) return false;
 
 	
 
@@ -189,6 +193,13 @@ bool init()
 void renderScene(mat4& matrixView, float time, float deltaTime)
 {
 	mat4 m;
+
+	programBasic.use();
+
+	m = matrixView;
+	m = translate(m, vec3(0, 5.0f, 0));
+	m = scale(m, vec3(1.0f, 1.0f, 1.0f));
+	fish.render(m);
 
 	// Render Terrain
 	programTerrain.use();
