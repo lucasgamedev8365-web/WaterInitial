@@ -74,7 +74,7 @@ void main(void)
 	float fogDensity = - 0.2;
 
 	fogFactor = exp2(fogDensity * length(position) * max(waterDepth, 0)/eyeAlt); // textures become unfogged when the player sinks below them, despite the player despite being under the water
-	fogFactor = max(fogFactor, 1);
+	fogFactor = clamp(fogFactor, -1, 1);
 
 	// calculate light
 	color = vec4(0, 0, 0, 1);
