@@ -17,13 +17,13 @@ using namespace glm;
 // 3D Models
 C3dglTerrain terrain, water;
 
-C3dglModel fish, fishAnim;
+C3dglModel fish, statue;
 
 C3dglProgram programBasic;
 C3dglProgram programWater;
 C3dglProgram programTerrain;
 
-GLuint idTexGrass, idTexSand, idTexFish;
+GLuint idTexGrass, idTexSand, idTexFish, idTexWater;
 
 // Water specific variables
 float waterLevel = 4.6f;
@@ -104,6 +104,8 @@ bool init()
 	if (!terrain.load("models\\heightmap.png", 10)) return false;
 	if (!water.load("models\\watermap.png", 10, &programWater)) return false;
 	programBasic.use();
+	//if (!statue.load("models\\Valledelfin.fbx")) return false;
+	//statue.loadMaterials("models\\valley\\");
 	if (!fish.load("models\\fish1.fbx")) return false;
 	fish.loadAnimations();
 
@@ -139,6 +141,15 @@ bool init()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
 
 	programTerrain.sendUniform("textureBed", 2);
+
+	bm.load("models/water.png", GL_RGBA);
+	if (!bm.getBits()) return false;
+
+	glActiveTexture(GL_TEXTURE3); //set current active texture unit
+	glGenTextures(1, &idTexWater);
+	glBindTexture(GL_TEXTURE_2D, idTexWater);//bind texture to current active texture unit
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
 
 	// setup lights (for basic and terrain programs only, water does not use these lights):
 	programBasic.sendUniform("lightAmbient.color", vec3(0.3f, 0.3f, 0.3f));
@@ -204,6 +215,11 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = rotate(m, radians(90.f), vec3(1, 0, 0));
 	fish.render(m);
 
+	/*m = matrixView;
+	m = translate(m, vec3(0, 8, 0));
+	m = scale(m, vec3(0.01f, 0.01f, 0.01f));
+	statue.render(m);*/
+
 	// Render Terrain
 	programTerrain.use();
 
@@ -224,6 +240,8 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	// Setup the Diffuse Material to: Watery Green
 	programWater.sendUniform("materialAmbient", vec3(0.2f, 0.22f, 0.02f));
+
+	glBindTexture(GL_TEXTURE_2D, idTexWater);
 
 	// render the water
 	m = matrixView;
