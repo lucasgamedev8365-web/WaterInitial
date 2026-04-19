@@ -17,13 +17,13 @@ using namespace glm;
 // 3D Models
 C3dglTerrain terrain, water;
 
-C3dglModel fish;
+C3dglModel fish, fishAnim;
 
 C3dglProgram programBasic;
 C3dglProgram programWater;
 C3dglProgram programTerrain;
 
-GLuint idTexGrass, idTexSand, idTexNone;
+GLuint idTexGrass, idTexSand, idTexFish;
 
 // Water specific variables
 float waterLevel = 4.6f;
@@ -98,57 +98,54 @@ bool init()
 	glutSetVertexAttribCoord3(programTerrain.getAttribLocation("aVertex"));
 	glutSetVertexAttribNormal(programTerrain.getAttribLocation("aNormal"));
 
+	
 	// load your 3D models here!
 	programTerrain.use();
 	if (!terrain.load("models\\heightmap.png", 10)) return false;
 	if (!water.load("models\\watermap.png", 10, &programWater)) return false;
 	programBasic.use();
-	if (!fish.load("models\\fish1.blend")) return false;
-
-	
+	if (!fish.load("models\\fish1.fbx")) return false;
+	//if (!fishAnim.load("models\\fish1Anim.fbx")) return false;
+	fish.loadAnimations();
 
 	C3dglBitmap bm;
-	bm.load("models/grass.png", GL_RGBA);
+
+	bm.load("models\\FishTex.png", GL_RGBA);
 	if (!bm.getBits()) return false;
 
 	glActiveTexture(GL_TEXTURE0); //set current active texture unit
+	glGenTextures(1, &idTexFish);
+	glBindTexture(GL_TEXTURE_2D, idTexFish);//bind texture to current active texture unit
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
+
+	bm.load("models/grass.png", GL_RGBA);
+	if (!bm.getBits()) return false;
+
+	glActiveTexture(GL_TEXTURE1); //set current active texture unit
 	glGenTextures(1, &idTexGrass);
 	glBindTexture(GL_TEXTURE_2D, idTexGrass);//bind texture to current active texture unit
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
 
-	programTerrain.sendUniform("textureShore", 0);
-
-	
+	programTerrain.sendUniform("textureShore", 1);
 
 	bm.load("models/sand.png", GL_RGBA);
 	if (!bm.getBits()) return false;
 
-	glActiveTexture(GL_TEXTURE1); //set current active texture unit
+	glActiveTexture(GL_TEXTURE2); //set current active texture unit
 	glGenTextures(1, &idTexSand);
 	glBindTexture(GL_TEXTURE_2D, idTexSand);//bind texture to current active texture unit
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
 
-	programTerrain.sendUniform("textureBed", 1);
-
-	//
-	glActiveTexture(GL_TEXTURE2);
-
-	programBasic.use();
-	glGenTextures(1, &idTexNone);
-	glBindTexture(GL_TEXTURE_2D, idTexNone); //bind texture to current active texture unit
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	BYTE bytes[] = { 255, 255, 255 };
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
-
-	programBasic.sendUniform("texture0", 0);
+	programTerrain.sendUniform("textureBed", 2);
 
 	// setup lights (for basic and terrain programs only, water does not use these lights):
-	programBasic.sendUniform("lightAmbient.color", vec3(0.1, 0.1, 0.1));
+	programBasic.sendUniform("lightAmbient.color", vec3(0.3f, 0.3f, 0.3f));
 	programBasic.sendUniform("lightDir.direction", vec3(1.0, 0.5, 1.0));
 	programBasic.sendUniform("lightDir.diffuse", vec3(1.0, 1.0, 1.0));
-	programTerrain.sendUniform("lightAmbient.color", vec3(0.1, 0.1, 0.1));
+	programTerrain.sendUniform("lightAmbient.color", vec3(0.3f, 0.3f, 0.3f));
 	programTerrain.sendUniform("lightDir.direction", vec3(1.0, 0.5, 1.0));
 	programTerrain.sendUniform("lightDir.diffuse", vec3(1.0, 1.0, 1.0));
 	programWater.sendUniform("lightAmbient.color", vec3(1.0, 1.0, 1.0));
@@ -196,9 +193,14 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	programBasic.use();
 
+	//glBindTexture(GL_TEXTURE_2D, idTexFish);
+	std::vector<mat4> transforms;
+	fish.getAnimData(0, time, transforms);
+	programBasic.sendUniform("bones", &transforms[0], transforms.size());
 	m = matrixView;
-	m = translate(m, vec3(0, 5.0f, 0));
-	m = scale(m, vec3(1.0f, 1.0f, 1.0f));
+	m = translate(m, vec3(0, 4, 0));
+	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
+	m = rotate(m, radians(90.f), vec3(1, 0, 0));
 	fish.render(m);
 
 	// Render Terrain

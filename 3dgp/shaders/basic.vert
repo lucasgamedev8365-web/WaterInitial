@@ -1,5 +1,9 @@
 #version 330
 
+// Bone Transforms
+#define MAX_BONES 100
+uniform mat4 bones[MAX_BONES];
+
 // Uniforms: Transformation Matrices
 uniform mat4 matrixProjection;
 uniform mat4 matrixView;
@@ -12,6 +16,8 @@ uniform vec3 materialDiffuse;
 in vec3 aVertex;
 in vec3 aNormal;
 in vec2 aTexCoord;
+in ivec4 aBoneId;
+in vec4 aBoneWeight;
 
 out vec4 color;
 out vec4 position;
@@ -51,8 +57,21 @@ vec4 DirectionalLight(DIRECTIONAL light)
 
 void main(void) 
 {
+	mat4 matrixBone;
+	if (aBoneWeight[0] == 0.0)
+	{
+		matrixBone = mat4(1);
+	}
+	else
+	{
+		matrixBone = (bones[aBoneId[0]] * aBoneWeight[0] +
+					  bones[aBoneId[1]] * aBoneWeight[1] +
+					  bones[aBoneId[2]] * aBoneWeight[2] +
+					  bones[aBoneId[3]] * aBoneWeight[3]);
+	}
+
 	// calculate position
-	position = matrixModelView * vec4(aVertex, 1.0);
+	position = matrixModelView * matrixBone * vec4(aVertex, 1.0);
 	gl_Position = matrixProjection * position;
 
 	// calculate normal
