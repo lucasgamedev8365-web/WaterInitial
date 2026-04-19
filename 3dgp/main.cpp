@@ -105,7 +105,6 @@ bool init()
 	if (!water.load("models\\watermap.png", 10, &programWater)) return false;
 	programBasic.use();
 	if (!fish.load("models\\fish1.fbx")) return false;
-	//if (!fishAnim.load("models\\fish1Anim.fbx")) return false;
 	fish.loadAnimations();
 
 	C3dglBitmap bm;
@@ -193,10 +192,12 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	programBasic.use();
 
-	//glBindTexture(GL_TEXTURE_2D, idTexFish);
+	//animations
 	std::vector<mat4> transforms;
 	fish.getAnimData(0, time, transforms);
 	programBasic.sendUniform("bones", &transforms[0], transforms.size());
+
+	//advanced fish rendering
 	m = matrixView;
 	m = translate(m, vec3(0, 4, 0));
 	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
