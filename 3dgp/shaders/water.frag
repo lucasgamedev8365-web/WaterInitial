@@ -1,7 +1,9 @@
 #version 330
 
 uniform vec3 waterColor;
-uniform vec3 skyColor; 
+uniform vec3 skyColor;
+uniform sampler2D textureWater;
+uniform bool wavesOverReflections;
 
 // Input Variables (received from Vertex Shader)
 in vec4 color;
@@ -19,4 +21,5 @@ void main(void)
 
 	//how much should the water reflect, or be its own colour?
 	outColor = mix(vec4(waterColor, 0.2), vec4(skyColor, 1), reflFactor);
+	//outColor = mix(outColor, texture(textureWater, texCoord0), reflFactor) * float(!wavesOverReflections) + vec4(skyColor, 1) * float(wavesOverReflections);
 }

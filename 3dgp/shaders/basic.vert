@@ -81,7 +81,7 @@ void main(void)
 	gl_Position = matrixProjection * position;
 
 	// setup the clip distance
-gl_ClipDistance[0] = dot(inverse(matrixView) * position, planeClip);
+	gl_ClipDistance[0] = dot(inverse(matrixView) * position, planeClip);
 
 	// calculate normal
 	normal = normalize(mat3(matrixModelView) * aNormal);

@@ -9,7 +9,7 @@ uniform mat4 matrixModelView;
 uniform vec3 materialAmbient;
 uniform float t;
 
-uniform vec4 planeClip;
+uniform bool wavesOverReflections;
 
 in vec3 aVertex;
 in vec3 aNormal;
@@ -57,11 +57,8 @@ void main(void)
 	vec3 newNormal = normalize(vec3(-dx, 1, -dz));
 
 	// calculate position
-	position = matrixModelView * vec4(newVertex, 1.0);
+	position = matrixModelView * vec4(newVertex, 1.0) * int(wavesOverReflections) + matrixModelView * vec4(aVertex, 1.0) * int(!wavesOverReflections);
 	gl_Position = matrixProjection * position;
-
-	// setup the clip distance
-	gl_ClipDistance[0] = dot(inverse(matrixView) * position, planeClip);
 
 	// calculate normal
 	normal = normalize(mat3(matrixModelView) * newNormal);
