@@ -141,6 +141,15 @@ bool init()
 
 	programTerrain.sendUniform("textureBed", 2);
 
+	bm.load("models/water.png", GL_RGBA);
+	if (!bm.getBits()) return false;
+
+	glActiveTexture(GL_TEXTURE3); //set current active texture unit
+	glGenTextures(1, &idTexWater);
+	glBindTexture(GL_TEXTURE_2D, idTexWater);//bind texture to current active texture unit
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
+
 	// setup lights (for basic and terrain programs only, water does not use these lights):
 	programBasic.sendUniform("lightAmbient.color", vec3(0.3f, 0.3f, 0.3f));
 	programBasic.sendUniform("lightDir.direction", vec3(1.0, 0.5, 1.0));
@@ -190,27 +199,6 @@ bool init()
 	cout << endl;
 
 	return true;
-}
-
-void renderWater(mat4& matrixView, float time, float deltaTime)
-{
-	mat4 m;
-
-	// Render Water
-	programWater.use();
-
-	programWater.sendUniform("t", time);
-
-	// Setup the Diffuse Material to: Watery Green
-	programWater.sendUniform("materialAmbient", vec3(0.2f, 0.22f, 0.02f));
-
-	// render the water
-	m = matrixView;
-	m = translate(m, vec3(0, waterLevel, 0));
-	m = scale(m, vec3(0.5f, 1.0f, 0.5f));
-	programWater.sendUniform("matrixModelView", m);
-	water.render(m);
-
 }
 
 void renderScene(mat4& matrixView, float time, float deltaTime)
@@ -272,14 +260,24 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = matrixView;
 	terrain.render(m);
 
-	//renderWater(matrixView, time, deltaTime);
+	// Render Water
+	programWater.use();
+
+	programWater.sendUniform("t", time);
+
+	// Setup the Diffuse Material to: Watery Green
+	programWater.sendUniform("materialAmbient", vec3(0.2f, 0.22f, 0.02f));
+
+	// render the water
+	m = matrixView;
+	m = translate(m, vec3(0, waterLevel, 0));
+	m = scale(m, vec3(0.5f, 1.0f, 0.5f));
+	programWater.sendUniform("matrixModelView", m);
+	water.render(m);
 }
 
 void onRender()
 {
-	//glEnable(GL_CLIP_PLANE0); //disable while testing stencil buffer for first time
-
-
 	// these variables control time & animation
 	static float prev = 0;
 	float time = glutGet(GLUT_ELAPSED_TIME) * 0.001f;	// time since start in seconds
@@ -287,9 +285,7 @@ void onRender()
 	prev = time;										// framerate is 1/deltaTime
 
 	// clear screen and buffers
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //"glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);" was here
-
-	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// setup the View Matrix (camera)
 	_vel = clamp(_vel + _acc * deltaTime, -vec3(maxspeed), vec3(maxspeed));
@@ -307,71 +303,6 @@ void onRender()
 	//fishSpeed is the Variable used to move fish around in a circlular path
 	fishSpeed += deltaTime * 30;
 	if (fishSpeed >= 360) fishSpeed -= 360;
-
-	// mirror angles
-	float angleFrame = 0, angleMirror = -90;
-	float ry = radians(angleFrame);
-	float rx = -radians(angleMirror);
-
-	// Find the reflection surface (point and normal)
-	vec3 p(0, waterLevel +0.2f, 0);
-	vec3 n(sin(ry) * cos(rx), sin(rx), cos(ry) * cos(rx));
-
-	// reflection matrix
-	float a = n.x, b = n.y, c = n.z, d = -dot(p, n);
-	// parameters of the reflection plane: Ax + By + Cz + d = 0
-	mat4 matrixReflection = mat4(1 - 2 * a * a, -2 * a * b, -2 * a * c, 0,
-		-2 * a * b, 1 - 2 * b * b, -2 * b * c, 0,
-		-2 * a * c, -2 * b * c, 1 - 2 * c * c, 0,
-		-2 * a * d, -2 * b * d, -2 * c * d, 1);
-
-	// check which side of the mirror is visible
-	mat4 camView = inverse(matrixView);
-	vec3 camPos = vec3(camView[3][0], camView[3][1], camView[3][2]);
-	if (dot(p - camPos, n) > 0)  n = -n; // flip the normal if we are at the other side of the mirror... 
-
-	programBasic.sendUniform("planeClip", vec4(a, b, c, d));
-	programTerrain.sendUniform("planeClip", vec4(a, b, c, d));
-	programWater.sendUniform("planeClip", vec4(a, b, c, d));
-
-	// Prepare the stencil test
-	glEnable(GL_STENCIL_TEST);
-	glStencilFunc(GL_ALWAYS, 1, 1);
-	glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-
-	// Disable screen rendering
-	glDisable(GL_DEPTH_TEST);
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-	// render the mirror with blocked color output
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	renderWater(matrixView, time, deltaTime);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-	// Use stencil test
-	glStencilFunc(GL_EQUAL, 1, 1);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-	// Enable screen rendering
-	glEnable(GL_DEPTH_TEST);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-	// Enable clipping plane
-	glEnable(GL_CLIP_PLANE0);
-
-	// Render the scene with the reflected camera
-	matrixView *= matrixReflection;
-	programBasic.sendUniform("matrixView", matrixView);
-	programTerrain.sendUniform("matrixView", matrixView);
-	programWater.sendUniform("matrixView", matrixView);
-	renderScene(matrixView, time, deltaTime);
-
-	// Revert to the regular camera
-	matrixView *= matrixReflection;
-
-	// disable stencil test and clip plane
-	glDisable(GL_STENCIL_TEST);
-	glDisable(GL_CLIP_PLANE0);
 
 	// setup View Matrix
 	programBasic.sendUniform("matrixView", matrixView);
