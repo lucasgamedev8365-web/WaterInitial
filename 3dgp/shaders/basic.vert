@@ -15,6 +15,7 @@ uniform vec3 materialDiffuse;
 
 uniform float waterLevel; // water level (in absolute units)
 uniform float fogDensity;
+uniform vec4 planeClip;
 
 in vec3 aVertex;
 in vec3 aNormal;
@@ -78,6 +79,9 @@ void main(void)
 	// calculate position
 	position = matrixModelView * matrixBone * vec4(aVertex, 1.0);
 	gl_Position = matrixProjection * position;
+
+	// setup the clip distance
+gl_ClipDistance[0] = dot(inverse(matrixView) * position, planeClip);
 
 	// calculate normal
 	normal = normalize(mat3(matrixModelView) * aNormal);
