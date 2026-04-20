@@ -27,6 +27,7 @@ GLuint idTexGrass, idTexSand, idTexFish, idTexWater;
 
 // Water specific variables
 float waterLevel = 4.6f;
+float fishNum = 0.0f;
 
 // The View Matrix
 mat4 matrixView;
@@ -101,7 +102,7 @@ bool init()
 	
 	// load your 3D models here!
 	programTerrain.use();
-	if (!terrain.load("models\\heightmap.png", 10)) return false;
+	if (!terrain.load("models\\heightmap1.png", 10)) return false;
 	if (!water.load("models\\watermap.png", 10, &programWater)) return false;
 	programBasic.use();
 	//if (!statue.load("models\\Valledelfin.fbx")) return false;
@@ -210,10 +211,36 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	//advanced fish rendering
 	m = matrixView;
-	m = translate(m, vec3(0, 4, 0));
+	m = translate(m, vec3(0 + sin(radians(fishNum)), 4, 0 + cos(radians(fishNum))));
 	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
 	m = rotate(m, radians(90.f), vec3(1, 0, 0));
+	m = rotate(m, radians(-fishNum), vec3(0, 0, 1));
 	fish.render(m);
+	m = matrixView;
+	m = translate(m, vec3(-2 + sin(radians(fishNum + 10)), 3.5f, -2 + cos(radians(fishNum + 10))));
+	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
+	m = rotate(m, radians(90.f), vec3(1, 0, 0));
+	m = rotate(m, radians(-(fishNum + 10)), vec3(0, 0, 1));
+	fish.render(m);
+	m = matrixView;
+	m = translate(m, vec3(-3 + sin(radians(fishNum - 30)), 3, -3 + cos(radians(fishNum - 30))));
+	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
+	m = rotate(m, radians(90.f), vec3(1, 0, 0));
+	m = rotate(m, radians(-(fishNum - 30)), vec3(0, 0, 1));
+	fish.render(m);
+	m = matrixView;
+	m = translate(m, vec3(-3 + cos(radians(fishNum - 30)), 2.5f, -3 + sin(radians(fishNum - 30))));
+	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
+	m = rotate(m, radians(90.f), vec3(1, 0, 0));
+	m = rotate(m, radians(90 + (fishNum - 30)), vec3(0, 0, 1));
+	fish.render(m);
+	m = matrixView;
+	m = translate(m, vec3(-30 + cos(radians(fishNum - 30)), 2.5f, -30 + sin(radians(fishNum - 30))));
+	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
+	m = rotate(m, radians(90.f), vec3(1, 0, 0));
+	m = rotate(m, radians(90 + (fishNum - 30)), vec3(0, 0, 1));
+	fish.render(m);
+
 
 	/*m = matrixView;
 	m = translate(m, vec3(0, 8, 0));
@@ -274,6 +301,9 @@ void onRender()
 	// move the camera up following the profile of terrain (Y coordinate of the terrain)
 	float terrainY = -std::max(terrain.getInterpolatedHeight(inverse(matrixView)[3][0], inverse(matrixView)[3][2]), waterLevel);
 	matrixView = translate(matrixView, vec3(0, terrainY, 0));
+
+	fishNum += deltaTime * 30;
+	if (fishNum >= 360) fishNum -= 360;
 
 	// setup View Matrix
 	programBasic.sendUniform("matrixView", matrixView);
