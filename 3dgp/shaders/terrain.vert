@@ -10,7 +10,7 @@ uniform vec3 materialAmbient;
 uniform vec3 materialDiffuse;
 
 uniform float waterLevel; // water level (in absolute units)
-uniform vec3 playerPos;
+uniform float fogDensity;
 
 in vec3 aVertex;
 in vec3 aNormal;
@@ -71,9 +71,8 @@ void main(void)
 
 	 // calculate the observer's altitude above the observed vertex
 	float eyeAlt = dot(-position.xyz, mat3(matrixModelView) * vec3(0, 1, 0));
-	float fogDensity = - 0.2;
 
-	fogFactor = exp2(fogDensity * length(position) * max(waterDepth, 0)/max(eyeAlt, waterLevel)); // textures become unfogged when the player sinks below them, despite the player despite being under the water
+	fogFactor = exp2(-fogDensity * length(position) * max(waterDepth, 0)/max(eyeAlt, waterLevel)); // textures become unfogged when the player sinks below them, despite the player despite being under the water
 	fogFactor = clamp(fogFactor, -1, 1);
 
 	// calculate light

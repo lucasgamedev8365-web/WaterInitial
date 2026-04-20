@@ -173,6 +173,10 @@ bool init()
 	programWater.sendUniform("skyColor", vec3(0.2f, 0.6f, 1.f));
 	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 	programTerrain.sendUniform("waterLevel", waterLevel);
+	programBasic.sendUniform("waterLevel", waterLevel);
+	programBasic.sendUniform("fogDensity", 0.4f);
+	programTerrain.sendUniform("fogDensity", 0.4f);
+	programBasic.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 
 	//allows texture colours (e.g. water) to be blended
 	glEnable(GL_BLEND);
