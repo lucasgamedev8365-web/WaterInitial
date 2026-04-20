@@ -73,7 +73,7 @@ void main(void)
 	float eyeAlt = dot(-position.xyz, mat3(matrixModelView) * vec3(0, 1, 0));
 	float fogDensity = - 0.2;
 
-	fogFactor = exp2(fogDensity * length(position) * max(waterDepth, 0)/eyeAlt); // textures become unfogged when the player sinks below them, despite the player despite being under the water
+	fogFactor = exp2(fogDensity * length(position) * max(waterDepth, 0)/max(eyeAlt, waterLevel)); // textures become unfogged when the player sinks below them, despite the player despite being under the water
 	fogFactor = clamp(fogFactor, -1, 1);
 
 	// calculate light
