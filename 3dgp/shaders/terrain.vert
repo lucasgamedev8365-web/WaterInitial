@@ -72,8 +72,8 @@ void main(void)
 	 // calculate the observer's altitude above the observed vertex
 	float eyeAlt = dot(-position.xyz, mat3(matrixModelView) * vec3(0, 1, 0));
 
-	fogFactor = exp2(-fogDensity * length(position) * max(waterDepth, 0)/max(eyeAlt, waterLevel)); // textures become unfogged when the player sinks below them, despite the player despite being under the water
-	fogFactor = clamp(fogFactor, -1, 1);
+	fogFactor = exp2(-fogDensity * length(position) * max(waterDepth, 0)/max(eyeAlt, waterLevel)); // textures stay fogged when the player goes under the water level
+	//fogFactor = clamp(fogFactor, -1, 1);
 
 	// calculate light
 	color = vec4(0, 0, 0, 1);

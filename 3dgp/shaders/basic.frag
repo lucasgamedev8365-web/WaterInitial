@@ -16,6 +16,8 @@ out vec4 outColor;
 void main(void) 
 {
 	outColor = color;
-	outColor *= texture(texture0, texCoord0);
+	outColor *= texture(texture0, texCoord0); // basic texturing
+
+	//same as terrain fragment shader
 	outColor = mix(vec4(waterColor, 1), outColor, fogFactor);
 }

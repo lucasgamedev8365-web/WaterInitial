@@ -27,7 +27,7 @@ GLuint idTexGrass, idTexSand, idTexFish, idTexWater;
 
 // Water specific variables
 float waterLevel = 4.6f;
-float fishNum = 0.0f;
+float fishSpeed = 0.0f;
 
 // The View Matrix
 mat4 matrixView;
@@ -105,8 +105,6 @@ bool init()
 	if (!terrain.load("models\\heightmap1.png", 10)) return false;
 	if (!water.load("models\\watermap.png", 10, &programWater)) return false;
 	programBasic.use();
-	//if (!statue.load("models\\Valledelfin.fbx")) return false;
-	//statue.loadMaterials("models\\valley\\");
 	if (!fish.load("models\\fish1.fbx")) return false;
 	fish.loadAnimations();
 
@@ -168,15 +166,16 @@ bool init()
 	programBasic.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
 	programTerrain.sendUniform("materialDiffuse", vec3(1.0, 1.0, 1.0));
 
-	// setup the water colours and level
+	// send the sky colours, water colours, fog density and water level values to their respective shader programs
 	programWater.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 	programWater.sendUniform("skyColor", vec3(0.2f, 0.6f, 1.f));
+	programBasic.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 	programTerrain.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
 	programTerrain.sendUniform("waterLevel", waterLevel);
 	programBasic.sendUniform("waterLevel", waterLevel);
 	programBasic.sendUniform("fogDensity", 0.4f);
 	programTerrain.sendUniform("fogDensity", 0.4f);
-	programBasic.sendUniform("waterColor", vec3(0.2f, 0.22f, 0.02f));
+	
 
 	//allows texture colours (e.g. water) to be blended
 	glEnable(GL_BLEND);
@@ -214,42 +213,39 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	programBasic.sendUniform("bones", &transforms[0], transforms.size());
 
 	//advanced fish rendering
+	//anti-clockwise moving fish
 	m = matrixView;
-	m = translate(m, vec3(0 + sin(radians(fishNum)), 4, 0 + cos(radians(fishNum))));
+	m = translate(m, vec3(0 + sin(radians(fishSpeed)), 4, 0 + cos(radians(fishSpeed))));
 	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
 	m = rotate(m, radians(90.f), vec3(1, 0, 0));
-	m = rotate(m, radians(-fishNum), vec3(0, 0, 1));
+	m = rotate(m, radians(-fishSpeed), vec3(0, 0, 1));
 	fish.render(m);
 	m = matrixView;
-	m = translate(m, vec3(-2 + sin(radians(fishNum + 10)), 3.5f, -2 + cos(radians(fishNum + 10))));
+	m = translate(m, vec3(-2 + sin(radians(fishSpeed + 10)), 3.5f, -2 + cos(radians(fishSpeed + 10))));
 	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
 	m = rotate(m, radians(90.f), vec3(1, 0, 0));
-	m = rotate(m, radians(-(fishNum + 10)), vec3(0, 0, 1));
+	m = rotate(m, radians(-(fishSpeed + 10)), vec3(0, 0, 1));
 	fish.render(m);
 	m = matrixView;
-	m = translate(m, vec3(-3 + sin(radians(fishNum - 30)), 3, -3 + cos(radians(fishNum - 30))));
+	m = translate(m, vec3(-3 + sin(radians(fishSpeed - 30)), 3, -3 + cos(radians(fishSpeed - 30))));
 	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
 	m = rotate(m, radians(90.f), vec3(1, 0, 0));
-	m = rotate(m, radians(-(fishNum - 30)), vec3(0, 0, 1));
-	fish.render(m);
-	m = matrixView;
-	m = translate(m, vec3(-3 + cos(radians(fishNum - 30)), 2.5f, -3 + sin(radians(fishNum - 30))));
-	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
-	m = rotate(m, radians(90.f), vec3(1, 0, 0));
-	m = rotate(m, radians(90 + (fishNum - 30)), vec3(0, 0, 1));
-	fish.render(m);
-	m = matrixView;
-	m = translate(m, vec3(-30 + cos(radians(fishNum - 30)), 2.5f, -30 + sin(radians(fishNum - 30))));
-	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
-	m = rotate(m, radians(90.f), vec3(1, 0, 0));
-	m = rotate(m, radians(90 + (fishNum - 30)), vec3(0, 0, 1));
+	m = rotate(m, radians(-(fishSpeed - 30)), vec3(0, 0, 1));
 	fish.render(m);
 
-
-	/*m = matrixView;
-	m = translate(m, vec3(0, 8, 0));
-	m = scale(m, vec3(0.01f, 0.01f, 0.01f));
-	statue.render(m);*/
+	//clockwise moving fish
+	m = matrixView;
+	m = translate(m, vec3(-3 + cos(radians(fishSpeed - 30)), 2.5f, -3 + sin(radians(fishSpeed - 30))));
+	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
+	m = rotate(m, radians(90.f), vec3(1, 0, 0));
+	m = rotate(m, radians(90 + (fishSpeed - 30)), vec3(0, 0, 1));
+	fish.render(m);
+	m = matrixView;
+	m = translate(m, vec3(-30 + cos(radians(fishSpeed - 30)), 2.5f, -30 + sin(radians(fishSpeed - 30))));
+	m = scale(m, vec3(0.0001f, 0.0001f, 0.0001f));
+	m = rotate(m, radians(90.f), vec3(1, 0, 0));
+	m = rotate(m, radians(90 + (fishSpeed - 30)), vec3(0, 0, 1));
+	fish.render(m);
 
 	// Render Terrain
 	programTerrain.use();
@@ -271,8 +267,6 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	// Setup the Diffuse Material to: Watery Green
 	programWater.sendUniform("materialAmbient", vec3(0.2f, 0.22f, 0.02f));
-
-	glBindTexture(GL_TEXTURE_2D, idTexWater);
 
 	// render the water
 	m = matrixView;
@@ -306,8 +300,9 @@ void onRender()
 	float terrainY = -std::max(terrain.getInterpolatedHeight(inverse(matrixView)[3][0], inverse(matrixView)[3][2]), waterLevel);
 	matrixView = translate(matrixView, vec3(0, terrainY, 0));
 
-	fishNum += deltaTime * 30;
-	if (fishNum >= 360) fishNum -= 360;
+	//fishSpeed is the Variable used to move fish around in a circlular path
+	fishSpeed += deltaTime * 30;
+	if (fishSpeed >= 360) fishSpeed -= 360;
 
 	// setup View Matrix
 	programBasic.sendUniform("matrixView", matrixView);

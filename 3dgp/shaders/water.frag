@@ -16,5 +16,7 @@ out vec4 outColor;
 void main(void) 
 {
 	outColor = color;
+
+	//how much should the water reflect, or be its own colour?
 	outColor = mix(vec4(waterColor, 0.2), vec4(skyColor, 1), reflFactor);
 }
