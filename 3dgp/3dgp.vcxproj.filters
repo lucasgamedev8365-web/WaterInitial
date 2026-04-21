@@ -36,6 +36,12 @@
     <None Include="shaders\water.vert">
       <Filter>Shader Source Files</Filter>
     </None>
+    <None Include="particle.frag">
+      <Filter>Shader Source Files</Filter>
+    </None>
+    <None Include="particle.vert">
+      <Filter>Shader Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
