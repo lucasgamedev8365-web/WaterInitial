@@ -21,7 +21,6 @@ out vec3 normal;
 out vec2 texCoord0;
 out float reflFactor; // reflection coefficient 
 out float fogFactor;
-out vec2 distortion;
 
 // Light declarations
 struct AMBIENT
@@ -57,10 +56,8 @@ void main(void)
 	vec3 newVertex = vec3(aVertex.x, y, aVertex.z);
 	vec3 newNormal = normalize(vec3(-dx, 1, -dz));
 
-	distortion = vec2(dx, dz);
-
 	// calculate position
-	position = matrixModelView * vec4(newVertex, 1.0); // waves have unusual interactions
+	position = matrixModelView * vec4(newVertex, 1.0) * int(wavesOverReflections) + matrixModelView * vec4(aVertex, 1.0) * int(!wavesOverReflections); // waves have unusual interactions
 	//with the reflective water, causing you to be able to see inside terrain. 
 	gl_Position = matrixProjection * position;
 
