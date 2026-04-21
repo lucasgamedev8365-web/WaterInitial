@@ -15,7 +15,11 @@ using namespace _3dgl;
 using namespace glm;
 
 
-//	Josiah test Commit!!
+//	Josiah...
+// Particle System Params
+const float PERIOD = 0.00075f;
+const float LIFETIME = 6;
+const int NPARTICLES = (int)(LIFETIME / PERIOD);
 
 
 // 3D Models
@@ -27,7 +31,9 @@ C3dglProgram programBasic;
 C3dglProgram programWater;
 C3dglProgram programTerrain;
 
-GLuint idTexGrass, idTexSand, idTexFish, idTexWater;
+C3dglProgram programParticle;
+
+GLuint idTexGrass, idTexSand, idTexFish, idTexWater, idBufferVelocity, idBufferStartTime;
 
 // Water specific variables
 float waterLevel = 4.6f;
@@ -45,6 +51,43 @@ float _fov = 60.f;		// field of view (zoom)
 
 bool init()
 {
+
+
+	// Prepare the particle buffers
+	std::vector<float> bufferVelocity;
+	std::vector<float> bufferStartTime;
+	float time = 0;
+	for (int i = 0; i < NPARTICLES; i++)
+	{
+		float theta = (float)1000 / 6.f * (float)rand() / (float)RAND_MAX;
+		float phi = (float)10 * 2.f * (float)rand() / (float)RAND_MAX;
+		float x = sin(theta) * cos(phi);
+		float y = cos(theta);
+		float z = sin(theta) * sin(phi);
+		float v = 2 + 0.5f * (float)rand() / (float)RAND_MAX;
+
+		bufferVelocity.push_back(x * v);
+		bufferVelocity.push_back(y * v);
+		bufferVelocity.push_back(z * v);
+
+		bufferStartTime.push_back(time);
+		time += PERIOD;
+	}
+	glGenBuffers(1, &idBufferVelocity);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferVelocity);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bufferVelocity.size(), &bufferVelocity[0],
+		GL_STATIC_DRAW);
+	glGenBuffers(1, &idBufferStartTime);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bufferStartTime.size(), &bufferStartTime[0],
+		GL_STATIC_DRAW);
+
+	// switch on: transparency/blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//-----------------------------------------------------------------------------------
+
+
 	// rendering states
 	glEnable(GL_DEPTH_TEST);	// depth test is necessary for most 3D scenes
 	glEnable(GL_NORMALIZE);		// normalization is needed by AssImp library models
@@ -54,6 +97,8 @@ bool init()
 	// Initialise Shaders
 	C3dglShader vertexShader;
 	C3dglShader fragmentShader;
+
+	
 
 	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
 	if (!vertexShader.loadFromFile("shaders/basic.vert")) return false;
@@ -97,6 +142,41 @@ bool init()
 	if (!programTerrain.attach(fragmentShader)) return false;
 	if (!programTerrain.link()) return false;
 	if (!programTerrain.use(true)) return false;
+
+
+	// init Particles shader
+	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
+	if (!vertexShader.loadFromFile("shaders/particle.vert")) return false;
+	if (!vertexShader.compile()) return false;
+
+	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
+	if (!fragmentShader.loadFromFile("shaders/particle.frag")) return false;
+	if (!fragmentShader.compile()) return false;
+
+	if (!programParticle.create()) return false;
+	if (!programParticle.attach(vertexShader)) return false;
+	if (!programParticle.attach(fragmentShader)) return false;
+	if (!programParticle.link()) return false;
+	if (!programParticle.use(true)) return false;
+
+
+
+	/*
+	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
+	if (!vertexShader.loadFromFile("shaders/particle.vert")) return false;
+	if (!vertexShader.compile()) return false;
+
+	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
+	if (!fragmentShader.loadFromFile("shaders/particle.frag")) return false;
+	if (!fragmentShader.compile()) return false;
+
+	if (!programParticle.create()) return false;
+	if (!programParticle.attach(vertexShader)) return false;
+	if (!programParticle.attach(fragmentShader)) return false;
+	if (!programParticle.link()) return false;
+	if (!programParticle.use(true)) return false;
+	*/
+
 
 	// glut additional setup
 	glutSetVertexAttribCoord3(programBasic.getAttribLocation("aVertex"));
@@ -179,6 +259,23 @@ bool init()
 	programTerrain.sendUniform("fogDensity", 0.4f);
 	
 	programWater.sendUniform("wavesOverReflections", wavesToggle);
+
+
+
+
+	
+	//Josiah
+	// Setup the particle system
+	programParticle.sendUniform("initialPos", vec3(0.0, 2.5, 0.0)); // Uniform location not found								ERROR
+	programParticle.sendUniform("gravity", vec3(0.0, -0.2, 0.0));
+	programParticle.sendUniform("particleLifetime", LIFETIME);
+
+
+
+
+
+
+
 
 	//allows texture colours (e.g. water) to be blended
 	glEnable(GL_BLEND);
@@ -277,6 +374,31 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	//send player position for underwater fog calculations
 	programTerrain.sendUniform("playerPos", getPos(matrixView));
 
+
+
+	// RENDER THE PARTICLE SYSTEM - Josiah
+	programParticle.use();
+
+	m = matrixView;
+	programParticle.sendUniform("matrixModelView", m);
+
+	// render the buffer
+	GLint aVelocity = programParticle.getAttribLocation("aVelocity");
+	GLint aStartTime = programParticle.getAttribLocation("aStartTime");
+	glEnableVertexAttribArray(aVelocity); 		// velocity
+	glEnableVertexAttribArray(aStartTime); 		// start time
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferVelocity);
+	glVertexAttribPointer(aVelocity, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
+	glVertexAttribPointer(aStartTime, 1, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_POINTS, 0, NPARTICLES);
+	glDisableVertexAttribArray(aVelocity);
+	glDisableVertexAttribArray(aStartTime);
+
+
+
+
+
 	// Setup the Diffuse Material to: White (aka textures remain untouched)
 	programTerrain.sendUniform("materialDiffuse", vec3(1.0f, 1.0f, 1.0f));
 
@@ -342,6 +464,11 @@ void onRender()
 		programBasic.sendUniform("planeClip", vec4(a, b, c, d));
 		programTerrain.sendUniform("planeClip", vec4(a, b, c, d));
 		programWater.sendUniform("planeClip", vec4(a, b, c, d));
+
+		//Josiah
+		programParticle.sendUniform("time", time);
+
+
 
 		// Enable clipping plane
 		glEnable(GL_CLIP_PLANE0);
@@ -425,6 +552,12 @@ void onReshape(int w, int h)
 	programBasic.sendUniform("matrixProjection", m);
 	programTerrain.sendUniform("matrixProjection", m);
 	programWater.sendUniform("matrixProjection", m);
+
+	//Josiah
+	programParticle.sendUniform("matrixProjection", m);
+						
+
+
 }
 
 // Handle WASDQE keys
