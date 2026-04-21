@@ -142,6 +142,8 @@ bool init()
 
 	programTerrain.sendUniform("textureBed", 2);
 
+	programWater.sendUniform("textureWater", 3);
+
 	// setup lights (for basic and terrain programs only, water does not use these lights):
 	programBasic.sendUniform("lightAmbient.color", vec3(0.3f, 0.3f, 0.3f));
 	programBasic.sendUniform("lightDir.direction", vec3(1.0, 0.5, 1.0));
@@ -274,7 +276,11 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = matrixView;
 	terrain.render(m);
 	
-	if (wavesToggle) renderWater(matrixView, time, deltaTime);
+	if (wavesToggle)
+	{
+		glBindTexture(GL_TEXTURE_2D, idTexWater);
+		renderWater(matrixView, time, deltaTime);
+	}
 }
 
 void onRender()
@@ -329,6 +335,7 @@ void onRender()
 
 		programBasic.sendUniform("planeClip", vec4(a, b, c, d));
 		programTerrain.sendUniform("planeClip", vec4(a, b, c, d));
+		programWater.sendUniform("planeClip", vec4(a, b, c, d));
 
 		// Enable clipping plane
 		glEnable(GL_CLIP_PLANE0);
@@ -336,7 +343,7 @@ void onRender()
 		// Prepare the stencil test
 		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 		glStencilFunc(GL_ALWAYS, 1, 1);
-		//glEnable(GL_STENCIL_TEST);
+		glEnable(GL_STENCIL_TEST);
 
 		// check which side of the mirror is visible
 		mat4 camView = inverse(matrixView);
@@ -349,13 +356,14 @@ void onRender()
 		
 		//render reflective water
 		renderWater(matrixView, time, deltaTime);
-
+		
+		glBindTexture(GL_TEXTURE_2D, idTexSand);
 		// Enable screen rendering
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_DEPTH_TEST);
 
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-		glStencilFunc(GL_NOTEQUAL, 1, 1);
+		glStencilFunc(GL_EQUAL, 1, 1);
 
 		matrixView *= matrixReflection;
 		programBasic.sendUniform("matrixView", matrixView);
@@ -363,18 +371,18 @@ void onRender()
 		programWater.sendUniform("matrixView", matrixView);
 		renderScene(matrixView, time, deltaTime);
 
-		// send the image to the water texture
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, idTexWater);
-		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT, 0);
-		programWater.sendUniform("textureWater", 3);
-
 		// Revert to the regular camera
 		matrixView *= matrixReflection;
 
 		// disable stencil test and clip plane
 		glDisable(GL_STENCIL_TEST);
 		glDisable(GL_CLIP_PLANE0);
+
+		// send the image to the water texture
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, idTexWater);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT, 0);
+		programWater.sendUniform("textureWater", 3);
 	}
 	
 
@@ -383,7 +391,11 @@ void onRender()
 	programTerrain.sendUniform("matrixView", matrixView);
 	programWater.sendUniform("matrixView", matrixView);
 
-	if (!wavesToggle) renderWater(matrixView, time, deltaTime);
+	if (!wavesToggle)
+	{
+		glBindTexture(GL_TEXTURE_2D, idTexWater);
+		renderWater(matrixView, time, deltaTime);
+	}
 
 	// render the scene objects
 	renderScene(matrixView, time, deltaTime);

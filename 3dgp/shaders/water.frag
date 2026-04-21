@@ -21,5 +21,5 @@ void main(void)
 
 	//how much should the water reflect, or be its own colour?
 	outColor = mix(vec4(waterColor, 0.2), vec4(skyColor, 1), reflFactor);
-	//outColor = mix(texture(textureWater, texCoord0), outColor, reflFactor);
+	//outColor = mix(vec4(waterColor,0.2), texture(textureWater, texCoord0), reflFactor);
 }
