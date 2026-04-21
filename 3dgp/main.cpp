@@ -15,7 +15,7 @@ using namespace _3dgl;
 using namespace glm;
 
 
-//	Josiah...
+
 // Particle System Params
 const float PERIOD = 0.00075f;
 const float LIFETIME = 6;
@@ -53,7 +53,8 @@ bool init()
 {
 
 
-	// Prepare the particle buffers
+	// Prepare the particle buffers 
+
 	std::vector<float> bufferVelocity;
 	std::vector<float> bufferStartTime;
 	float time = 0;
@@ -144,31 +145,15 @@ bool init()
 	if (!programTerrain.use(true)) return false;
 
 
-	// init Particles shader
-	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
-	if (!vertexShader.loadFromFile("shaders/particle.vert")) return false;
-	if (!vertexShader.compile()) return false;
-
-	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
-	if (!fragmentShader.loadFromFile("shaders/particle.frag")) return false;
-	if (!fragmentShader.compile()) return false;
-
-	if (!programParticle.create()) return false;
-	if (!programParticle.attach(vertexShader)) return false;
-	if (!programParticle.attach(fragmentShader)) return false;
-	if (!programParticle.link()) return false;
-	if (!programParticle.use(true)) return false;
-
-
-
+	// init Particles shader  - could not be made to work on time so disabled to prevent crashes
 	/*
 	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
 	if (!vertexShader.loadFromFile("shaders/particle.vert")) return false;
 	if (!vertexShader.compile()) return false;
 
 	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
-	if (!fragmentShader.loadFromFile("shaders/particle.frag")) return false;
-	if (!fragmentShader.compile()) return false;
+	if (!fragmentShader.loadFromFile("shaders/partieecle.frag")) return false;
+    if (!fragmentShader.compile()) return false;
 
 	if (!programParticle.create()) return false;
 	if (!programParticle.attach(vertexShader)) return false;
@@ -262,16 +247,11 @@ bool init()
 
 
 
-
 	
-	//Josiah
 	// Setup the particle system
 	programParticle.sendUniform("initialPos", vec3(0.0, 2.5, 0.0)); // Uniform location not found								ERROR
 	programParticle.sendUniform("gravity", vec3(0.0, -0.2, 0.0));
 	programParticle.sendUniform("particleLifetime", LIFETIME);
-
-
-
 
 
 
@@ -376,7 +356,7 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 
 
-	// RENDER THE PARTICLE SYSTEM - Josiah
+	// RENDER THE PARTICLE SYSTEM 
 	programParticle.use();
 
 	m = matrixView;
@@ -465,7 +445,7 @@ void onRender()
 		programTerrain.sendUniform("planeClip", vec4(a, b, c, d));
 		programWater.sendUniform("planeClip", vec4(a, b, c, d));
 
-		//Josiah
+		
 		programParticle.sendUniform("time", time);
 
 
@@ -553,7 +533,7 @@ void onReshape(int w, int h)
 	programTerrain.sendUniform("matrixProjection", m);
 	programWater.sendUniform("matrixProjection", m);
 
-	//Josiah
+	
 	programParticle.sendUniform("matrixProjection", m);
 						
 
