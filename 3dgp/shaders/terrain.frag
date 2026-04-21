@@ -1,7 +1,7 @@
 #version 330
 
 uniform vec3 waterColor;
-uniform sampler2D textureBed;
+uniform sampler2D textureBed; 
 uniform sampler2D textureShore; 
 
 // Input Variables (received from Vertex Shader)

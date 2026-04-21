@@ -120,7 +120,7 @@ bool init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bm.getWidth(), bm.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bm.getBits()); //bind current bitmap to texture unit
 
-	bm.load("models/grass.png", GL_RGBA);
+	bm.load("models\\grass.png", GL_RGBA);
 	if (!bm.getBits()) return false;
 
 	glActiveTexture(GL_TEXTURE1); //set current active texture unit
@@ -131,7 +131,7 @@ bool init()
 
 	programTerrain.sendUniform("textureShore", 1);
 
-	bm.load("models/sand.png", GL_RGBA);
+	bm.load("models\\sand.png", GL_RGBA);
 	if (!bm.getBits()) return false;
 
 	glActiveTexture(GL_TEXTURE2); //set current active texture unit
@@ -206,7 +206,6 @@ void renderWater(mat4& matrixView, float time, float deltaTime)
 	// Setup the Diffuse Material to: Watery Green
 	programWater.sendUniform("materialAmbient", vec3(0.2f, 0.22f, 0.02f));
 
-	glBindTexture(GL_TEXTURE_2D, idTexWater);
 	// render the water
 	m = matrixView;
 	m = translate(m, vec3(0, waterLevel, 0));
@@ -261,6 +260,7 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = rotate(m, radians(90 + (fishSpeed - 30)), vec3(0, 0, 1));
 	fish.render(m);
 
+	glBindTexture(GL_TEXTURE_2D, idTexSand);
 	// Render Terrain
 	programTerrain.use();
 
@@ -273,8 +273,8 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	// render the terrain
 	m = matrixView;
 	terrain.render(m);
-
-	//renderWater(matrixView, time, deltaTime);
+	
+	if (wavesToggle) renderWater(matrixView, time, deltaTime);
 }
 
 void onRender()
@@ -308,94 +308,82 @@ void onRender()
 	fishSpeed += deltaTime * 30;
 	if (fishSpeed >= 360) fishSpeed -= 360;
 
-	// mirror angles - all this crap is for mirror reflections
-	float angleFrame = 0, angleMirror = -90;
-	float ry = radians(angleFrame);
-	float rx = -radians(angleMirror);
-
-	// Find the reflection surface (point and normal)
-	vec3 p(0, waterLevel, 0);
-	vec3 n(sin(ry) * cos(rx), sin(rx), cos(ry) * cos(rx));
-
-	// reflection matrix
-	float a = n.x, b = n.y, c = n.z, d = -dot(p, n);
-	// parameters of the reflection plane: Ax + By + Cz + d = 0
-	mat4 matrixReflection = mat4(1 - 2 * a * a, -2 * a * b, -2 * a * c, 0,
-		-2 * a * b, 1 - 2 * b * b, -2 * b * c, 0,
-		-2 * a * c, -2 * b * c, 1 - 2 * c * c, 0,
-		-2 * a * d, -2 * b * d, -2 * c * d, 1);
-
-	programBasic.sendUniform("planeClip", vec4(a, b, c, d));
-	programTerrain.sendUniform("planeClip", vec4(a, b, c, d));
-
-	// Enable clipping plane
-	glEnable(GL_CLIP_PLANE0);
-
-	// Prepare the stencil test
-	glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-	glStencilFunc(GL_ALWAYS, 1, 1);
-	glEnable(GL_STENCIL_TEST);
-
-	glDisable(GL_DEPTH_TEST);
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	renderWater(matrixView, time, deltaTime);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glEnable(GL_DEPTH_TEST);
-
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-	glStencilFunc(GL_NOTEQUAL, 1, 1);
-	
-	/*
-
-	// check which side of the mirror is visible
-	mat4 camView = inverse(matrixView);
-	vec3 camPos = vec3(camView[3][0], camView[3][1], camView[3][2]);
-	if (dot(p - camPos, n) > 0)  n = -n; // flip the normal if we are at the other side of the mirror... 
-
-	
-
-	// Disable screen rendering
-	glDisable(GL_DEPTH_TEST);
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-	// Use stencil test
-	glStencilFunc(GL_EQUAL, 1, 1);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-	// Enable screen rendering
-	glEnable(GL_DEPTH_TEST);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-	*/
-
 	// Render the scene with the reflected camera
-	matrixView *= matrixReflection;
-	programBasic.sendUniform("matrixView", matrixView);
-	programTerrain.sendUniform("matrixView", matrixView);
-	programWater.sendUniform("matrixView", matrixView);
-	renderScene(matrixView, time, deltaTime);
+	if (!wavesToggle) {
+		// mirror angles - all this crap is for mirror reflections
+		float angleFrame = 0, angleMirror = -90;
+		float ry = radians(angleFrame);
+		float rx = -radians(angleMirror);
 
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		// Find the reflection surface (point and normal)
+		vec3 p(0, waterLevel, 0);
+		vec3 n(sin(ry) * cos(rx), sin(rx), cos(ry) * cos(rx));
 
-	// send the image to the water texture
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, idTexWater);
-	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT, 0);
-	programWater.sendUniform("textureWater", 3);
+		// reflection matrix
+		float a = n.x, b = n.y, c = n.z, d = -dot(p, n);
+		// parameters of the reflection plane: Ax + By + Cz + d = 0
+		mat4 matrixReflection = mat4(1 - 2 * a * a, -2 * a * b, -2 * a * c, 0,
+			-2 * a * b, 1 - 2 * b * b, -2 * b * c, 0,
+			-2 * a * c, -2 * b * c, 1 - 2 * c * c, 0,
+			-2 * a * d, -2 * b * d, -2 * c * d, 1);
 
-	// Revert to the regular camera
-	matrixView *= matrixReflection;
+		programBasic.sendUniform("planeClip", vec4(a, b, c, d));
+		programTerrain.sendUniform("planeClip", vec4(a, b, c, d));
 
-	// disable stencil test and clip plane
-	glDisable(GL_STENCIL_TEST);
-	glDisable(GL_CLIP_PLANE0);
+		// Enable clipping plane
+		glEnable(GL_CLIP_PLANE0);
+
+		// Prepare the stencil test
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+		glStencilFunc(GL_ALWAYS, 1, 1);
+		//glEnable(GL_STENCIL_TEST);
+
+		// check which side of the mirror is visible
+		mat4 camView = inverse(matrixView);
+		vec3 camPos = vec3(camView[3][0], camView[3][1], camView[3][2]);
+		if (dot(p - camPos, n) > 0)  n = -n; // flip the normal if we are at the other side of the mirror... 
+
+		// Disable screen rendering
+		glDisable(GL_DEPTH_TEST);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		
+		//render reflective water
+		renderWater(matrixView, time, deltaTime);
+
+		// Enable screen rendering
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glEnable(GL_DEPTH_TEST);
+
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		glStencilFunc(GL_NOTEQUAL, 1, 1);
+
+		matrixView *= matrixReflection;
+		programBasic.sendUniform("matrixView", matrixView);
+		programTerrain.sendUniform("matrixView", matrixView);
+		programWater.sendUniform("matrixView", matrixView);
+		renderScene(matrixView, time, deltaTime);
+
+		// send the image to the water texture
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, idTexWater);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT, 0);
+		programWater.sendUniform("textureWater", 3);
+
+		// Revert to the regular camera
+		matrixView *= matrixReflection;
+
+		// disable stencil test and clip plane
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_CLIP_PLANE0);
+	}
+	
 
 	// setup View Matrix
 	programBasic.sendUniform("matrixView", matrixView);
 	programTerrain.sendUniform("matrixView", matrixView);
 	programWater.sendUniform("matrixView", matrixView);
 
-	renderWater(matrixView, time, deltaTime);
+	if (!wavesToggle) renderWater(matrixView, time, deltaTime);
 
 	// render the scene objects
 	renderScene(matrixView, time, deltaTime);
