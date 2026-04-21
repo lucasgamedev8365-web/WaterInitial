@@ -17,7 +17,6 @@ using namespace glm;
 
 //	Josiah test Commit!!
 
-
 // 3D Models
 C3dglTerrain terrain, water;
 
@@ -28,6 +27,8 @@ C3dglProgram programWater;
 C3dglProgram programTerrain;
 
 GLuint idTexGrass, idTexSand, idTexFish, idTexWater;
+
+GLuint idFBO;
 
 // Water specific variables
 float waterLevel = 4.6f;
@@ -146,11 +147,38 @@ bool init()
 
 	programTerrain.sendUniform("textureBed", 2);
 
+	programWater.sendUniform("screenRes", vec2(GLUT_WINDOW_WIDTH ,GLUT_WINDOW_HEIGHT));
 	glActiveTexture(GL_TEXTURE3);
 	glGenTextures(1, &idTexWater);
 	glBindTexture(GL_TEXTURE_2D, idTexWater);
 
-	programWater.sendUniform("textureWater", 3);
+	// Texture parameters - to get nice filtering 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// This will allocate an uninitilised texture - might need to change GLUT_WINDOW
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+
+	// Create a framebuffer object (FBO)
+	glGenFramebuffers(1, &idFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, idFBO);
+
+	// Attach a depth buffer
+	GLuint depth_rb;
+	glGenRenderbuffers(1, &depth_rb);
+	glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
+
+	// attach the texture to FBO colour attachment point
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, idTexWater, 0);
+
+	// switch back to window-system-provided framebuffer
+	glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
+
+	//programWater.sendUniform("textureWater", 3);
 
 	// setup lights (for basic and terrain programs only, water does not use these lights):
 	programBasic.sendUniform("lightAmbient.color", vec3(0.3f, 0.3f, 0.3f));
@@ -299,6 +327,17 @@ void onRender()
 	float deltaTime = time - prev;						// time since last frame
 	prev = time;										// framerate is 1/deltaTime
 
+	// Store the current viewport in a safe place
+	GLint viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	int w = viewport[2];
+	int h = viewport[3];
+
+	//glViewport(0, 0, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT);
+	//programBasic.sendUniform("matrixProjection", perspective(radians(90.f), 1.0f, 0.02f, 1000.0f));
+	//programTerrain.sendUniform("matrixProjection", perspective(radians(90.f), 1.0f, 0.02f, 1000.0f));
+	//programWater.sendUniform("matrixProjection", perspective(radians(90.f), 1.0f, 0.02f, 1000.0f));
+
 	// clear screen and buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //for mirror reflections
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //non-mirror reflection clear function
@@ -343,6 +382,9 @@ void onRender()
 		programTerrain.sendUniform("planeClip", vec4(a, b, c, d));
 		programWater.sendUniform("planeClip", vec4(a, b, c, d));
 
+		// Pass 1: off-screen rendering
+		glBindFramebufferEXT(GL_FRAMEBUFFER, idFBO);
+
 		// Enable clipping plane
 		glEnable(GL_CLIP_PLANE0);
 
@@ -356,6 +398,7 @@ void onRender()
 		vec3 camPos = vec3(camView[3][0], camView[3][1], camView[3][2]);
 		if (dot(p - camPos, n) > 0)  n = -n; // flip the normal if we are at the other side of the mirror... 
 
+		glActiveTexture(GL_TEXTURE3);
 		// Disable screen rendering
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -384,13 +427,17 @@ void onRender()
 		glDisable(GL_STENCIL_TEST);
 		glDisable(GL_CLIP_PLANE0);
 
+		// Pass 2: on-screen rendering
+		glBindFramebufferEXT(GL_FRAMEBUFFER, 0);
+
 		// send the image to the water texture
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, idTexWater);
-		glTexBuffer(GL_TEXTURE_2D, idTexWater, GL_TEXTURE3);
-		programWater.sendUniform("textureWater", 3);
+		
+		//glActiveTexture(GL_TEXTURE3);
+		//glTexBuffer(GL_TEXTURE_2D, idTexWater, idFBO);
+		//glBindTexture(GL_TEXTURE_2D, idTexWater);
+		
+		//programWater.sendUniform("textureWater", 3);
 	}
-	
 
 	// setup View Matrix
 	programBasic.sendUniform("matrixView", matrixView);
@@ -399,7 +446,7 @@ void onRender()
 
 	if (!wavesToggle)
 	{
-		glBindTexture(GL_TEXTURE_2D, idTexWater);
+		glBindTexture(GL_TEXTURE_2D, idFBO);
 		renderWater(matrixView, time, deltaTime);
 	}
 
@@ -408,7 +455,7 @@ void onRender()
 
 	// the camera must be moved down by terrainY to avoid unwanted effects
 	matrixView = translate(matrixView, vec3(0, -terrainY, 0));
-
+	
 	// essential for double-buffering technique
 	glutSwapBuffers();
 
