@@ -146,6 +146,10 @@ bool init()
 
 	programTerrain.sendUniform("textureBed", 2);
 
+	glActiveTexture(GL_TEXTURE3);
+	glGenTextures(1, &idTexWater);
+	glBindTexture(GL_TEXTURE_2D, idTexWater);
+
 	programWater.sendUniform("textureWater", 3);
 
 	// setup lights (for basic and terrain programs only, water does not use these lights):
@@ -289,8 +293,6 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 void onRender()
 {
-	//glEnable(GL_CLIP_PLANE0); //disable while testing stencil buffer for first time
-
 	// these variables control time & animation
 	static float prev = 0;
 	float time = glutGet(GLUT_ELAPSED_TIME) * 0.001f;	// time since start in seconds
@@ -385,7 +387,7 @@ void onRender()
 		// send the image to the water texture
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, idTexWater);
-		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0, GLUT_WINDOW_WIDTH, GLUT_WINDOW_HEIGHT, 0);
+		glTexBuffer(GL_TEXTURE_2D, idTexWater, GL_TEXTURE3);
 		programWater.sendUniform("textureWater", 3);
 	}
 	

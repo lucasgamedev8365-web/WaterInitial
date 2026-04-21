@@ -20,6 +20,6 @@ void main(void)
 	outColor = color;
 
 	//how much should the water reflect, or be its own colour?
-	outColor = mix(vec4(waterColor, 0.2), vec4(skyColor, 1), reflFactor);
-	//outColor = mix(vec4(waterColor,0.2), texture(textureWater, texCoord0), reflFactor);
+	//outColor = mix(vec4(waterColor, 0.2), vec4(skyColor, 1), reflFactor);
+	outColor = mix(vec4(waterColor,0.2), texture(textureWater, texCoord0), reflFactor); //use for when textures are being sent from the first pass render
 }

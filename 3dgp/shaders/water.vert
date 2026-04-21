@@ -57,7 +57,8 @@ void main(void)
 	vec3 newNormal = normalize(vec3(-dx, 1, -dz));
 
 	// calculate position
-	position = matrixModelView * vec4(newVertex, 1.0) * int(wavesOverReflections) + matrixModelView * vec4(aVertex, 1.0) * int(!wavesOverReflections);
+	position = matrixModelView * vec4(newVertex, 1.0) * int(wavesOverReflections) + matrixModelView * vec4(aVertex, 1.0) * int(!wavesOverReflections); // waves have unusual interactions
+	//with the reflective water, causing you to be able to see inside terrain. 
 	gl_Position = matrixProjection * position;
 
 	// calculate normal
